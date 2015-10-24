@@ -6,7 +6,7 @@
  *
  * Name:    		main.c
  * Purpose: 		Seven segment example, using IC CA3161
- * Date:			20-09-2015
+ * Date:			03-10-2015
  *
  * Hardware setup:	
  *				CA3161 connected to pins 1 till 4 of PORTD
@@ -35,28 +35,28 @@
 #define CLEAR	0b1111
 
 /***************************************************************************
-*  Function:		DisplayNumber(int number)
+*  Function:		DisplayNumber(BYTE number, BOOL showPoint)
 *  Description:		Sets pins 1 till 4 of PORTD to the BCD value which represents a number between 0 and 9.
-*  Receives:		Number to display (must be between 0 and 9)
-*				Boolean which determines if the point needs to be shown (showPoint > 0) or not (showPoint = 0).
+*  Receives:		BYTE number		:	Number to display (must be between 0 and 9)
+*				BOOL showPoint	:	Boolean which determines if the point needs to be shown (showPoint > 0) or not (showPoint = 0).
 *  Returns:		Nothing
 ***************************************************************************/
 void DisplayNumber(BYTE number, BOOL showPoint)
 {
-	/* Check if the number is smaller than 10, we can only show numbers 1 to 9 */
+	/* Check if the number is smaller than 10, we can only show numbers 0 to 9 */
 	if(number < 10)
 	{
 		/* Show the number by setting pins 1 to 4 of PORTD 
 		 * We dont want to change the values of pins 0 and 5 to 7 so we first AND the current values of PORTD with 0xE1 (the mask) 
-		 * This will clear the bit 1 to 4, then we OR in the shifted number.
-		 * If we just OR the shifted number with PIND then a old number-value can influence the new setting. 
+		 * This will clear the bits 1 to 4, then we OR in the shifted number.
+		 * If we just OR the shifted number with PIND then an old number-value can influence the new setting. 
 		 */
 		PORTD = (PIND & 0xE1) | (number << 1);	
 		
 		/* Optionally show Point, showPoint is low active */
 		if(showPoint == 0)
 		{
-			/* We only want to change pin 5, so the mask is now set to 0xDF and anded with the shited inverse of showPoint */
+			/* We only want to change pin 5, so the mask is now set to 0xDF and anded with the shifted inverse of showPoint */
 			/* This will clear bit 5 */
 			PORTD = (PIND & 0xDF) & ~(showPoint << 5);
 		}
@@ -70,10 +70,11 @@ void DisplayNumber(BYTE number, BOOL showPoint)
 }
 
 /***************************************************************************
-*  Function:		DisplaySpecialCharacter(int number)
+*  Function:		DisplaySpecialCharacter(BYTE specialCharacter, BOOL showPoint)
 *  Description:		Sets pins 0 till 3 of PORTD to the BCD value.
-*  Receives:		Number to display (must be between 0 and 9)
-*				Boolean which determines if the point needs to be shown (showPoint > 0)or not (showPoint = 0).
+*  Receives:		BYTE specialCharacter	:	Special character to display (must be between 10 and 15)
+*				BOOL showPoint		:	Boolean which determines if the point needs to be shown 
+*										(showPoint > 0)or not (showPoint = 0).
 *  Returns:		Nothing
 ***************************************************************************/
 void DisplaySpecialCharacter(BYTE specialCharacter, BOOL showPoint)
@@ -91,7 +92,7 @@ void DisplaySpecialCharacter(BYTE specialCharacter, BOOL showPoint)
 		/* Optionally show Point, showPoint is low active */
 		if(showPoint == 0)
 		{
-			/* We only want to change pin 5, so the mask is now set to 0xDF and anded with the shited inverse of showPoint */
+			/* We only want to change pin 5, so the mask is now set to 0xDF and anded with the shifted inverse of showPoint */
 			/* This will clear bit 5 */
 			PORTD = (PIND & 0xDF) & ~(showPoint << 5);
 		}
@@ -108,25 +109,23 @@ void DisplaySpecialCharacter(BYTE specialCharacter, BOOL showPoint)
 *  Function:		ClearDisplay()
 *  Description:		Clears the display and point, by switching off all segments
 *  Receives:		Nothing
-*				Nothing
 *  Returns:		Nothing
 ***************************************************************************/
-void ClearDisplay()
+void ClearDisplay(void)
 {
 	PORTD = (PIND & 0xD1) | (0x1F << 1);
 }
 
 /***************************************************************************
 *  Function:		Setup(int number)							
-*  Description:		Setup PORTD and the timer, this function need to be called at
-*				the beginning of main.			
+*  Description:		Setup PORTD, this function need to be called at the beginning of main.			
 *  Receives:		Nothing			
 *  Returns:		Nothing										
 ***************************************************************************/
 void Setup()
 {
 	/* Setup PORTD */
-	/* Set pins 1 till 5 as output , and pins 1 and 6 to 7 as input*/
+	/* Set pins 1 till 5 as output , and pins 0 and 6 to 7 as input*/
 	/* We skip pin 0 because this pin is needed for programming the chip */
 	DDRD = 0b00111110;	
 }
@@ -149,10 +148,10 @@ int main(void)
 	/* Test the code by showing all the 15 characters + clear and loop indefinitely */
     while(1)
     {
-		/* If the value is below 10, then display a number ,otherwise display special character */
+		/* If the value is below 10, then display a number, otherwise display special character */
 		if(bcdCode < 10)
 		{
-			/* Display the BCD code and afterwards increment the bcdCode variable for the next iteration. */
+			/* Display the number and afterwards increment the bcdCode variable for the next iteration. */
 			DisplayNumber(bcdCode++, showPoint);
 		}
 		else
